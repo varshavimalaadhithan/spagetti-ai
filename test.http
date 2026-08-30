@@ -1,6 +1,0 @@
-POST http://localhost:3000/api/transcript
-Content-Type: application/json
-
-{
-  "videoId": "PeMlggyqz0Y"
-}

@@ -44,3 +44,5 @@ next-env.d.ts
 .spaghetti-cache/
 .spaghetti-cache.*
 .vercel
+test.http
+test.htt
