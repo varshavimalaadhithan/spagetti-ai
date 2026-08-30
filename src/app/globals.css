@@ -1,8 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #090909;
+  --foreground: #fafafa;
+  --muted: #a1a1aa;
+
+  --red: #ef4444;
+  --red-dark: #dc2626;
+  --red-light: #f87171;
+
+  --cream: #fff7ed;
+  --orange: #fb923c;
+
+  --card: #111111;
+  --border: #27272a;
 }
 
 @theme inline {
@@ -12,15 +23,300 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  margin: 0;
+  background:
+    radial-gradient(
+      circle at 50% -10%,
+      rgba(239, 68, 68, 0.16),
+      transparent 35%
+    ),
+    var(--background);
+
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+button:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+
+button:not(:disabled):active {
+  transform: translateY(0);
+}
+
+::selection {
+  background: rgba(239, 68, 68, 0.35);
+  color: white;
+}
+
+/* -------------------- */
+/* SaaS cards */
+/* -------------------- */
+
+.saas-card {
+  background: rgba(17, 17, 17, 0.82);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  backdrop-filter: blur(14px);
+  transition:
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+.saas-card:hover {
+  border-color: #3f3f46;
+}
+
+/* -------------------- */
+/* Text */
+/* -------------------- */
+
+.gradient-text {
+  background:
+    linear-gradient(
+      90deg,
+      #ffffff 0%,
+      #fecaca 45%,
+      #ef4444 100%
+    );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* -------------------- */
+/* Glow */
+/* -------------------- */
+
+.red-glow {
+  box-shadow:
+    0 0 40px rgba(239, 68, 68, 0.15),
+    0 0 100px rgba(239, 68, 68, 0.07);
+}
+
+/* -------------------- */
+/* Page animations */
+/* -------------------- */
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out both;
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.7s ease-out both;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------- */
+/* Floating meatballs */
+/* -------------------- */
+
+.meatball {
+  position: absolute;
+
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      #fb923c,
+      #dc2626 60%,
+      #991b1b
+    );
+
+  box-shadow:
+    0 5px 20px rgba(239, 68, 68, 0.25);
+
+  animation:
+    meatballFloat 5s ease-in-out infinite;
+}
+
+.meatball-one {
+  top: 22%;
+  left: 12%;
+  animation-delay: 0s;
+}
+
+.meatball-two {
+  top: 35%;
+  right: 14%;
+  animation-delay: 1.2s;
+}
+
+.meatball-three {
+  bottom: 20%;
+  left: 18%;
+  animation-delay: 2.1s;
+}
+
+.meatball-four {
+  bottom: 28%;
+  right: 20%;
+  animation-delay: 0.7s;
+}
+
+@keyframes meatballFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-18px) rotate(12deg);
+  }
+}
+
+/* -------------------- */
+/* Spaghetti noodle */
+/* -------------------- */
+
+.spaghetti-line {
+  position: absolute;
+
+  width: 180px;
+  height: 90px;
+
+  border-top:
+    3px solid rgba(239, 68, 68, 0.35);
+
+  border-radius: 50%;
+
+  animation:
+    noodleFloat 6s ease-in-out infinite;
+}
+
+.spaghetti-one {
+  top: 18%;
+  right: 5%;
+  transform: rotate(25deg);
+}
+
+.spaghetti-two {
+  bottom: 15%;
+  left: 3%;
+  transform: rotate(-20deg);
+  animation-delay: 1.5s;
+}
+
+@keyframes noodleFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(20deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(25deg);
+  }
+}
+
+/* -------------------- */
+/* Loading dots */
+/* -------------------- */
+
+.loading-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: var(--red);
+
+  animation: loadingDot 1.2s infinite ease-in-out;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes loadingDot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* -------------------- */
+/* Scrollbar */
+/* -------------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090909;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
 }
