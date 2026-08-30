@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { YoutubeTranscript } from "youtube-transcript";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { openai } from "@/lib/openai";
 
 export async function GET(request: Request) {
   try {
