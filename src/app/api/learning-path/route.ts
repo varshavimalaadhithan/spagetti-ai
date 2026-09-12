@@ -448,13 +448,14 @@ export async function POST(
               );
 
               return result;
-            } catch {
-              console.log(
-                `Transcript unavailable: ${title}`
-              );
+            } catch (error) {
+  console.error(
+    `Transcript unavailable: ${title}`,
+    error
+  );
 
-              return null;
-            }
+  return null;
+}
           }
         )
       );
