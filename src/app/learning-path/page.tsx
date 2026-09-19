@@ -1,65 +1,23 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-} from "react";
-
-type Resource = {
-  videoId?: string;
-  chunkId?: string;
-  startTime?: number;
-  endTime?: number;
-  takeaway?: string;
-  reason?: string;
-  text?: string;
-  url?: string;
-};
-
-type LearningSection = {
-  id?: string;
-  title?: string;
-  concept?: string;
-  goal?: string;
-  explanation?: string;
-  resources?: Resource[];
-};
-
-type LearningPathData = {
-  title?: string;
-  query?: string;
-  learningPath?: LearningSection[];
-  videosProcessed?: number;
-  totalChunks?: number;
-  processingTime?: number;
-};
+import { useEffect, useState } from "react";
 
 export default function LearningPath() {
-  const [path, setPath] =
-    useState<LearningPathData | null>(
-      null
-    );
-
-  const [error, setError] =
-    useState("");
+  const [path, setPath] = useState<any>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     try {
-      const saved =
-        localStorage.getItem(
-          "learningPath"
-        );
+      const saved = localStorage.getItem("learningPath");
 
       if (!saved) {
-        setError(
-          "No learning path found."
-        );
-
+        setError("No learning path found.");
         return;
       }
 
-      const parsed =
-        JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+
+      console.log("LEARNING PATH DATA:", parsed);
 
       setPath(parsed);
     } catch (err) {
@@ -76,10 +34,10 @@ export default function LearningPath() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-[#090909] px-6 py-12 text-white">
-        <div className="mx-auto max-w-4xl">
+      <main className="min-h-screen bg-[#090909] text-white px-6 py-12">
+        <div className="max-w-4xl mx-auto">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 text-center">
-            <div className="mb-4 text-4xl">
+            <div className="text-4xl mb-4">
               🍝
             </div>
 
@@ -90,13 +48,6 @@ export default function LearningPath() {
             <p className="mt-3 text-zinc-400">
               {error}
             </p>
-
-            <a
-              href="/"
-              className="mt-6 inline-flex rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700"
-            >
-              Back home
-            </a>
           </div>
         </div>
       </main>
@@ -105,14 +56,14 @@ export default function LearningPath() {
 
   if (!path) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#090909] text-white">
+      <main className="min-h-screen bg-[#090909] text-white flex items-center justify-center">
         <div className="text-center">
-          <div className="mb-4 text-5xl">
+          <div className="text-5xl mb-5">
             🍝
           </div>
 
           <p className="text-zinc-400">
-            Loading your learning path...
+            Building your learning path...
           </p>
         </div>
       </main>
@@ -120,334 +71,488 @@ export default function LearningPath() {
   }
 
   const sections =
-    Array.isArray(
-      path.learningPath
-    )
+    Array.isArray(path.learningPath)
       ? path.learningPath
       : [];
 
+  const validation =
+    path.validation || null;
+
   return (
-    <main className="min-h-screen bg-[#090909] px-5 py-10 text-white md:px-8 md:py-14">
-      <div className="mx-auto max-w-5xl">
+    <main className="min-h-screen bg-[#090909] text-white px-5 py-10 md:px-8 md:py-14">
+      <div className="max-w-5xl mx-auto">
 
         {/* HEADER */}
 
-        <header className="mb-14">
-          <div className="mb-8 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600 text-xl">
-                🍝
-              </div>
-
-              <span className="font-bold tracking-wide text-red-500">
-                SPAGHETTI AI
-              </span>
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center text-xl">
+              🍝
             </div>
 
-            <a
-              href="/"
-              className="rounded-lg border border-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
-            >
-              New path
-            </a>
+            <span className="font-bold tracking-wide text-red-500">
+              SPAGHETTI AI
+            </span>
           </div>
 
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-red-500">
-            Your learning route
+          <p className="text-sm uppercase tracking-[0.2em] text-red-500 font-semibold mb-3">
+            Optimized learning path
           </p>
 
-          <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
-            {path.query ||
-              path.title ||
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+            {path.title ||
               "Learning Path"}
           </h1>
 
-          <p className="mt-4 max-w-xl text-zinc-400">
-            Watch the important parts.
-            Skip the searching.
+          {path.query && (
+            <p className="text-zinc-400 text-lg mt-4">
+              Learning:
+              <span className="text-white ml-2">
+                {path.query}
+              </span>
+            </p>
+          )}
+
+          <p className="mt-5 max-w-3xl text-zinc-500 leading-7">
+            Spaghetti AI analyzed
+            educational video content,
+            transcript segments and
+            prerequisite relationships to
+            select the strongest explanations
+            in a useful learning order.
           </p>
+        </div>
 
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Stat
-              value={sections.length}
-              label="concepts"
-            />
+        {/* ENGINEERING / VALIDATION SUMMARY */}
 
-            {typeof path.videosProcessed ===
-              "number" && (
-              <Stat
-                value={
-                  path.videosProcessed
-                }
-                label="videos analyzed"
-              />
+        <div className="mb-12 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-5 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-red-500 font-semibold">
+                Path verification
+              </p>
+
+              <h2 className="text-xl font-semibold mt-1">
+                Built from transcript-level evidence
+              </h2>
+            </div>
+
+            {validation?.passed === true && (
+              <div className="rounded-full border border-emerald-900 bg-emerald-950/50 px-4 py-2 text-sm text-emerald-400 font-medium">
+                ✓ Validation passed
+              </div>
             )}
           </div>
 
-          <div className="mt-8 h-px bg-gradient-to-r from-red-600 via-zinc-800 to-transparent" />
-        </header>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <MetricCard
+              label="Concepts"
+              value={sections.length}
+            />
 
-        {/* TIMELINE */}
+            <MetricCard
+              label="Videos analyzed"
+              value={
+                path.videosProcessed ??
+                "—"
+              }
+            />
 
-        <div className="relative">
-          <div className="absolute bottom-10 left-[19px] top-6 w-px bg-gradient-to-b from-red-600 via-red-900 to-zinc-900 md:left-[27px]" />
+            <MetricCard
+              label="Coverage"
+              value={
+                isNumber(
+                  validation?.conceptCoverage
+                )
+                  ? `${Math.round(
+                      validation.conceptCoverage
+                    )}%`
+                  : "—"
+              }
+            />
 
-          <div className="space-y-9">
-            {sections.map(
-              (
-                section,
-                index
-              ) => {
-                const resources =
-                  Array.isArray(
-                    section.resources
-                  )
-                    ? section.resources
-                    : [];
+            <MetricCard
+              label="Grounding"
+              value={
+                isNumber(
+                  validation?.resourceGrounding
+                )
+                  ? `${Math.round(
+                      validation.resourceGrounding
+                    )}%`
+                  : "—"
+              }
+            />
 
-                return (
-                  <section
-                    key={
-                      section.id ||
-                      index
-                    }
-                    className="relative pl-14 md:pl-20"
-                  >
+            <MetricCard
+              label="Duplicates"
+              value={
+                isNumber(
+                  validation?.duplicateResources
+                )
+                  ? validation.duplicateResources
+                  : "—"
+              }
+            />
+          </div>
 
-                    {/* NUMBER */}
+          <p className="mt-4 text-xs text-zinc-600">
+            Grounding checks whether selected
+            timestamps correspond to retrieved
+            transcript evidence. Coverage shows
+            how much of the generated curriculum
+            has a suitable learning resource.
+          </p>
+        </div>
 
-                    <div className="absolute left-0 top-1 z-10 flex h-10 w-10 items-center justify-center rounded-full border-4 border-[#090909] bg-red-600 text-sm font-bold md:h-14 md:w-14">
-                      {index + 1}
+        {/* EMPTY STATE */}
+
+        {sections.length === 0 && (
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
+            <h2 className="text-xl font-semibold">
+              No learning sections were generated.
+            </h2>
+
+            <p className="text-zinc-400 mt-2">
+              Try searching again.
+            </p>
+          </div>
+        )}
+
+        {/* LEARNING PATH */}
+
+        <div className="space-y-8">
+          {sections.map(
+            (
+              section: any,
+              index: number
+            ) => {
+              return (
+                <div
+                  key={
+                    section.id ||
+                    index
+                  }
+                  className="relative rounded-2xl border border-zinc-800 bg-zinc-900 p-6 md:p-8"
+                >
+                  {/* CONCEPT NUMBER */}
+
+                  <div className="flex items-center justify-between gap-4 mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-9 h-9 rounded-full bg-red-600 text-white font-bold">
+                        {index + 1}
+                      </div>
+
+                      <span className="text-sm font-semibold uppercase tracking-wider text-red-500">
+                        Concept{" "}
+                        {index + 1}
+                      </span>
                     </div>
 
-                    <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+                    <span className="text-xs text-zinc-600">
+                      {index + 1} /{" "}
+                      {sections.length}
+                    </span>
+                  </div>
 
-                      {/* TITLE */}
+                  {/* TITLE */}
 
-                      <div className="p-6 md:p-8">
-                        <span className="text-xs font-semibold uppercase tracking-[0.18em] text-red-500">
-                          Concept{" "}
-                          {index + 1}
-                        </span>
+                  <h2 className="text-2xl md:text-3xl font-bold">
+                    {section.title ||
+                      section.concept ||
+                      "Learning Concept"}
+                  </h2>
 
-                        <h2 className="mt-2 text-2xl font-bold md:text-3xl">
-                          {section.title ||
-                            section.concept ||
-                            "Learning Concept"}
-                        </h2>
+                  {/* GOAL */}
 
-                        {/* SHORT GOAL */}
+                  {section.goal && (
+                    <div className="mt-4">
+                      <p className="text-xs uppercase tracking-wider text-zinc-600 mb-1">
+                        Learning objective
+                      </p>
 
-                        {section.goal && (
-                          <div className="mt-5 rounded-xl border border-zinc-800 bg-[#0c0c0c] px-4 py-3">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-600">
-                              🎯 Your goal
-                            </p>
+                      <p className="text-zinc-300 leading-7">
+                        {section.goal}
+                      </p>
+                    </div>
+                  )}
 
-                            <p className="mt-1 text-sm leading-6 text-zinc-300">
-                              {
-                                section.goal
-                              }
-                            </p>
-                          </div>
-                        )}
+                  {/* EXPLANATION */}
 
-                        {/* VIDEO CLIPS */}
+                  {section.explanation && (
+                    <div className="mt-6 rounded-xl border border-zinc-800 bg-[#0c0c0c] p-5">
+                      <h3 className="font-semibold text-white">
+                        Why this comes here
+                      </h3>
 
-                        <div className="mt-7 space-y-4">
-                          {resources.length >
-                          0 ? (
-                            resources.map(
-                              (
-                                resource,
-                                resourceIndex
-                              ) => {
-                                const startTime =
-                                  Number(
-                                    resource.startTime
-                                  ) ||
-                                  0;
+                      <p className="text-zinc-400 mt-2 leading-7">
+                        {
+                          section.explanation
+                        }
+                      </p>
+                    </div>
+                  )}
 
-                                const endTime =
-                                  Number(
-                                    resource.endTime
-                                  ) ||
-                                  0;
+                  {/* RESOURCES */}
 
-                                const duration =
-                                  Math.max(
-                                    0,
-                                    endTime -
+                  {Array.isArray(
+                    section.resources
+                  ) &&
+                    section.resources
+                      .length > 0 && (
+                      <div className="mt-8">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold">
+                            Selected learning segments
+                          </h3>
+
+                          <span className="text-xs text-zinc-500">
+                            {
+                              section
+                                .resources
+                                .length
+                            }{" "}
+                            segment
+                            {section
+                              .resources
+                              .length !== 1
+                              ? "s"
+                              : ""}
+                          </span>
+                        </div>
+
+                        <div className="space-y-4">
+                          {section.resources.map(
+                            (
+                              resource: any,
+                              resourceIndex: number
+                            ) => {
+                              const startTime =
+                                Number(
+                                  resource.startTime
+                                ) || 0;
+
+                              const endTime =
+                                Number(
+                                  resource.endTime
+                                ) || 0;
+
+                              const videoId =
+                                resource.videoId;
+
+                              const youtubeUrl =
+                                resource.url ||
+                                (videoId
+                                  ? `https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(
                                       startTime
-                                  );
+                                    )}s`
+                                  : "#");
 
-                                const videoId =
-                                  resource.videoId;
+                              const educationalScore =
+                                getNumber(
+                                  resource.educationalScore
+                                );
 
-                                const youtubeUrl =
-                                  resource.url ||
-                                  (videoId
-                                    ? `https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(
-                                        startTime
-                                      )}s`
-                                    : "#");
+                              const pathScore =
+                                getNumber(
+                                  resource.pathScore
+                                );
 
-                                return (
-                                  <article
-                                    key={
-                                      resource.chunkId ||
-                                      resourceIndex
-                                    }
-                                    className="rounded-xl border border-zinc-800 bg-zinc-950 p-5 md:p-6"
-                                  >
+                              const similarity =
+                                getNumber(
+                                  resource.similarity
+                                );
 
-                                    {/* TIME */}
+                              const transcript =
+                                typeof resource.text ===
+                                "string"
+                                  ? resource.text.trim()
+                                  : "";
 
-                                    <div className="flex flex-wrap items-center gap-3">
-                                      <span className="rounded-md bg-red-600/10 px-2.5 py-1 font-mono text-sm font-bold text-red-500">
-                                        {formatTime(
-                                          startTime
+                              return (
+                                <div
+                                  key={
+                                    resource.chunkId ||
+                                    `${videoId}-${startTime}-${resourceIndex}`
+                                  }
+                                  className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950"
+                                >
+                                  <div className="p-5">
+                                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
+                                      <div className="min-w-0 flex-1">
+
+                                        {/* TIMESTAMP */}
+
+                                        <div className="flex flex-wrap items-center gap-3">
+                                          <div className="font-mono text-sm rounded-lg border border-red-950 bg-red-950/30 px-3 py-1.5">
+                                            <span className="text-red-400 font-semibold">
+                                              {formatTime(
+                                                startTime
+                                              )}
+                                            </span>
+
+                                            <span className="text-zinc-600 mx-2">
+                                              →
+                                            </span>
+
+                                            <span className="text-zinc-300">
+                                              {formatTime(
+                                                endTime
+                                              )}
+                                            </span>
+                                          </div>
+
+                                          <span className="text-xs text-zinc-600">
+                                            {formatDuration(
+                                              endTime -
+                                                startTime
+                                            )}{" "}
+                                            watch
+                                          </span>
+                                        </div>
+
+                                        {/* TAKEAWAY */}
+
+                                        {resource.takeaway && (
+                                          <div className="mt-4">
+                                            <p className="text-xs uppercase tracking-wider text-zinc-600 mb-1">
+                                              What you&apos;ll get
+                                            </p>
+
+                                            <p className="text-white font-medium leading-6">
+                                              {
+                                                resource.takeaway
+                                              }
+                                            </p>
+                                          </div>
                                         )}
-                                      </span>
 
-                                      <span className="text-zinc-700">
-                                        →
-                                      </span>
+                                        {/* WHY SELECTED */}
 
-                                      <span className="font-mono text-sm text-zinc-400">
-                                        {formatTime(
-                                          endTime
-                                        )}
-                                      </span>
+                                        <div className="mt-5 rounded-xl border border-zinc-800 bg-[#0b0b0b] p-4">
+                                          <div className="flex items-center gap-2">
+                                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-950 text-xs text-red-400">
+                                              ✓
+                                            </span>
 
-                                      {duration >
-                                        0 && (
-                                        <span className="text-xs text-zinc-600">
-                                          •{" "}
-                                          {formatDuration(
-                                            duration
-                                          )}
-                                        </span>
-                                      )}
-                                    </div>
+                                            <h4 className="text-sm font-semibold">
+                                              Why Spaghetti selected this segment
+                                            </h4>
+                                          </div>
 
-                                    {/* MAIN TAKEAWAY */}
-
-                                    <div className="mt-5">
-                                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-red-500">
-                                        This clip teaches
-                                      </p>
-
-                                      <p className="mt-2 text-lg font-semibold leading-7 text-white">
-                                        {resource.takeaway ||
-                                          resource.reason ||
-                                          "Watch this segment for the key explanation."}
-                                      </p>
-                                    </div>
-
-                                    {/* BUTTON */}
-
-                                    {videoId && (
-                                      <a
-                                        href={
-                                          youtubeUrl
-                                        }
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-red-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-red-700 md:w-auto"
-                                      >
-                                        ▶ Watch this
-                                        segment
-                                      </a>
-                                    )}
-
-                                    {/* OPTIONAL DETAILS */}
-
-                                    {(resource.reason ||
-                                      section.explanation) && (
-                                      <details className="mt-5 border-t border-zinc-800 pt-4">
-                                        <summary className="cursor-pointer text-sm text-zinc-500 hover:text-zinc-300">
-                                          More details
-                                        </summary>
-
-                                        <div className="mt-3 space-y-3 text-sm leading-6 text-zinc-500">
-                                          {resource.reason && (
-                                            <p>
-                                              <span className="font-semibold text-zinc-400">
-                                                Why
-                                                this
-                                                clip:{" "}
-                                              </span>
-
+                                          {resource.reason ? (
+                                            <p className="text-sm text-zinc-400 mt-3 leading-6">
                                               {
                                                 resource.reason
                                               }
                                             </p>
-                                          )}
-
-                                          {section.explanation && (
-                                            <p>
-                                              <span className="font-semibold text-zinc-400">
-                                                Why
-                                                this
-                                                concept
-                                                matters:{" "}
-                                              </span>
-
-                                              {
-                                                section.explanation
-                                              }
+                                          ) : (
+                                            <p className="text-sm text-zinc-500 mt-3 leading-6">
+                                              This segment survived semantic retrieval,
+                                              educational scoring and path optimization.
                                             </p>
                                           )}
+
+                                          <div className="mt-4 flex flex-wrap gap-2">
+                                            <EvidenceBadge>
+                                              ✓ Exact timestamp
+                                            </EvidenceBadge>
+
+                                            {transcript && (
+                                              <EvidenceBadge>
+                                                ✓ Transcript grounded
+                                              </EvidenceBadge>
+                                            )}
+
+                                            {educationalScore !==
+                                              null && (
+                                              <ScoreBadge
+                                                label="Educational"
+                                                score={
+                                                  educationalScore
+                                                }
+                                              />
+                                            )}
+
+                                            {pathScore !==
+                                              null && (
+                                              <ScoreBadge
+                                                label="Path"
+                                                score={
+                                                  pathScore
+                                                }
+                                              />
+                                            )}
+
+                                            {similarity !==
+                                              null && (
+                                              <EvidenceBadge>
+                                                Semantic{" "}
+                                                {formatSimilarity(
+                                                  similarity
+                                                )}
+                                              </EvidenceBadge>
+                                            )}
+                                          </div>
                                         </div>
-                                      </details>
-                                    )}
-                                  </article>
-                                );
-                              }
-                            )
-                          ) : (
-                            <div className="rounded-xl border border-dashed border-zinc-800 p-5 text-sm text-zinc-500">
-                              No strong
-                              segment was
-                              found for
-                              this concept.
-                            </div>
+
+                                        {/* TRANSCRIPT EVIDENCE */}
+
+                                        {transcript && (
+                                          <div className="mt-4">
+                                            <p className="text-xs uppercase tracking-wider text-zinc-600 mb-2">
+                                              Transcript evidence
+                                            </p>
+
+                                            <blockquote className="border-l-2 border-red-900 pl-4 text-sm text-zinc-500 leading-6">
+                                              “
+                                              {shortenText(
+                                                transcript,
+                                                320
+                                              )}
+                                              ”
+                                            </blockquote>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* WATCH */}
+
+                                      {videoId && (
+                                        <a
+                                          href={
+                                            youtubeUrl
+                                          }
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="shrink-0 inline-flex items-center justify-center rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition"
+                                        >
+                                          Watch exact
+                                          segment →
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
                           )}
                         </div>
                       </div>
-                    </div>
-                  </section>
-                );
-              }
-            )}
-          </div>
+                    )}
+                </div>
+              );
+            }
+          )}
         </div>
 
-        {/* END */}
+        {/* FOOTER */}
 
         {sections.length > 0 && (
-          <div className="mt-14 rounded-2xl border border-zinc-800 bg-zinc-900 p-8 text-center">
-            <div className="text-3xl">
-              🍝
-            </div>
-
-            <h2 className="mt-3 text-xl font-bold">
-              Path complete
-            </h2>
-
-            <p className="mt-2 text-sm text-zinc-500">
-              That&apos;s the route.
-              No 47-tab YouTube expedition
-              required.
+          <div className="mt-14 pb-6 text-center">
+            <p className="text-sm text-zinc-600">
+              🍝 Spaghetti AI · From scattered videos to an optimized learning path.
             </p>
-
-            <a
-              href="/"
-              className="mt-6 inline-flex rounded-lg border border-zinc-700 px-5 py-2.5 text-sm font-semibold text-zinc-300 hover:bg-zinc-800"
-            >
-              Build another path
-            </a>
           </div>
         )}
       </div>
@@ -455,45 +560,146 @@ export default function LearningPath() {
   );
 }
 
-function Stat({
-  value,
+function MetricCard({
   label,
+  value,
 }: {
-  value: string | number;
   label: string;
+  value: string | number;
 }) {
   return (
-    <div className="rounded-full border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm">
-      <span className="font-semibold">
+    <div className="rounded-xl border border-zinc-800 bg-[#0b0b0b] p-4">
+      <div className="text-xl font-bold text-white">
         {value}
-      </span>
+      </div>
 
-      <span className="ml-2 text-zinc-500">
+      <div className="mt-1 text-xs text-zinc-500">
         {label}
-      </span>
+      </div>
     </div>
   );
+}
+
+function EvidenceBadge({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="rounded-full border border-zinc-800 bg-zinc-900 px-3 py-1 text-xs text-zinc-400">
+      {children}
+    </span>
+  );
+}
+
+function ScoreBadge({
+  label,
+  score,
+}: {
+  label: string;
+  score: number;
+}) {
+  return (
+    <span className="rounded-full border border-red-950 bg-red-950/30 px-3 py-1 text-xs text-red-300">
+      {label} {Math.round(score)}/100
+    </span>
+  );
+}
+
+function getNumber(
+  value: unknown
+): number | null {
+  const number = Number(value);
+
+  return Number.isFinite(number)
+    ? number
+    : null;
+}
+
+function isNumber(
+  value: unknown
+): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  );
+}
+
+function formatSimilarity(
+  similarity: number
+) {
+  if (
+    similarity >= 0 &&
+    similarity <= 1
+  ) {
+    return `${Math.round(
+      similarity * 100
+    )}%`;
+  }
+
+  return `${Math.round(
+    similarity
+  )}%`;
+}
+
+function shortenText(
+  text: string,
+  maxLength: number
+) {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return `${text
+    .slice(0, maxLength)
+    .trim()}…`;
+}
+
+function formatDuration(
+  seconds: number
+) {
+  const safeSeconds = Math.max(
+    0,
+    Math.round(seconds)
+  );
+
+  if (safeSeconds < 60) {
+    return `${safeSeconds}s`;
+  }
+
+  const minutes = Math.floor(
+    safeSeconds / 60
+  );
+
+  const remaining =
+    safeSeconds % 60;
+
+  if (remaining === 0) {
+    return `${minutes}m`;
+  }
+
+  return `${minutes}m ${remaining}s`;
 }
 
 function formatTime(
   seconds: number
 ) {
-  const total =
+  const totalSeconds =
     Math.max(
       0,
       Math.floor(seconds)
     );
 
-  const hours =
-    Math.floor(total / 3600);
+  const hours = Math.floor(
+    totalSeconds / 3600
+  );
 
-  const minutes =
-    Math.floor(
-      (total % 3600) / 60
-    );
+  const minutes = Math.floor(
+    (totalSeconds % 3600) / 60
+  );
 
-  const remaining =
-    total % 60;
+  const remainingSeconds =
+    totalSeconds % 60;
 
   if (hours > 0) {
     return `${hours}:${String(
@@ -502,7 +708,7 @@ function formatTime(
       2,
       "0"
     )}:${String(
-      remaining
+      remainingSeconds
     ).padStart(
       2,
       "0"
@@ -510,35 +716,9 @@ function formatTime(
   }
 
   return `${minutes}:${String(
-    remaining
+    remainingSeconds
   ).padStart(
     2,
     "0"
   )}`;
-}
-
-function formatDuration(
-  seconds: number
-) {
-  const rounded =
-    Math.max(
-      0,
-      Math.round(seconds)
-    );
-
-  if (rounded < 60) {
-    return `${rounded}s`;
-  }
-
-  const minutes =
-    Math.floor(
-      rounded / 60
-    );
-
-  const remaining =
-    rounded % 60;
-
-  return remaining > 0
-    ? `${minutes}m ${remaining}s`
-    : `${minutes}m`;
 }
