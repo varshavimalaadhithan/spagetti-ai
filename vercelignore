@@ -1,0 +1,6 @@
+.spaghetti-cache/
+.spaghetti-cache.*
+.env*
+.git/
+node_modules/
+.next/

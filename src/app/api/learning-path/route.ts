@@ -47,7 +47,7 @@ type ProcessedVideo = {
   chunks: any[];
 };
 
-const FINAL_PATH_CACHE_VERSION = "v7";
+const FINAL_PATH_CACHE_VERSION = "v8";
 const CONCEPT_EMBEDDING_CACHE_VERSION = "v2";
 const FINAL_PATH_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -2269,64 +2269,214 @@ Return ONLY valid JSON:
       );
 
     const learningPath = {
-      title:
-        `Learning Path: ${learningQuery}`,
+  title:
+    `Learning Path: ${learningQuery}`,
 
-      learningPath:
-        orderedConcepts.map(
-          (concept) => {
-            const selectedChunks =
-              selectedChunksByConcept.get(
-                concept.id
-              ) || [];
+  learningPath:
+    orderedConcepts.map(
+      (concept) => {
+        const selectedChunks =
+          selectedChunksByConcept.get(
+            concept.id
+          ) || [];
 
-            const resources =
-              selectedChunks.map(
-                (chunk) => ({
-                  videoId:
-                    chunk.videoId,
+        const candidatePool =
+          candidatePoolsByConcept.get(
+            concept.id
+          ) || [];
 
-                  startTime:
-                    Number(
-                      chunk.startTime
-                    ),
+        const resources =
+          selectedChunks.map(
+            (
+              chunk,
+              selectedIndex
+            ) => {
+              const educationalScore =
+                Number(
+                  chunk?.educationalScore
+                );
 
-                  endTime:
-                    Number(
-                      chunk.endTime
-                    ),
+              const similarity =
+                Number(
+                  chunk?.similarity
+                );
 
-                  takeaway:
-                    buildTakeaway(
-                      concept,
-                      chunk
-                    ),
+              const pathScore =
+                Number(
+                  chunk?.pathScore
+                );
 
-                  reason:
-                    buildReason(
-                      chunk
-                    ),
-                })
-              );
+              const selectedKey =
+                getCandidateResourceKey(
+                  chunk
+                );
 
-            return {
-              id:
-                concept.id,
+              const alternativeCandidates =
+                candidatePool
+                  .filter(
+                    (candidate) =>
+                      getCandidateResourceKey(
+                        candidate
+                      ) !== selectedKey
+                  )
+                  .slice(0, 3)
+                  .map(
+                    (candidate) => {
+                      const candidateEducationalScore =
+                        Number(
+                          candidate?.educationalScore
+                        );
 
-              title:
-                concept.title,
+                      const candidateSimilarity =
+                        Number(
+                          candidate?.similarity
+                        );
 
-              goal:
-                concept.goal,
+                      return {
+                        videoId:
+                          candidate.videoId,
 
-              explanation:
-                "",
+                        startTime:
+                          Number(
+                            candidate.startTime
+                          ),
 
-              resources,
-            };
-          }
-        ),
-    };
+                        endTime:
+                          Number(
+                            candidate.endTime
+                          ),
+
+                        ...(Number.isFinite(
+                          candidateEducationalScore
+                        )
+                          ? {
+                              educationalScore:
+                                candidateEducationalScore,
+                            }
+                          : {}),
+
+                        ...(Number.isFinite(
+                          candidateSimilarity
+                        )
+                          ? {
+                              similarity:
+                                candidateSimilarity,
+                            }
+                          : {}),
+                      };
+                    }
+                  );
+
+              return {
+                videoId:
+                  chunk.videoId,
+
+                chunkId:
+                  typeof chunk?.chunkId ===
+                  "string"
+                    ? chunk.chunkId
+                    : typeof chunk?.id ===
+                      "string"
+                    ? chunk.id
+                    : "",
+
+                startTime:
+                  Number(
+                    chunk.startTime
+                  ),
+
+                endTime:
+                  Number(
+                    chunk.endTime
+                  ),
+
+                takeaway:
+                  buildTakeaway(
+                    concept,
+                    chunk
+                  ),
+
+                coverageSummary:
+                  typeof chunk?.analysis?.explanation === "string" &&
+                  chunk.analysis.explanation.trim().length > 0
+                    ? chunk.analysis.explanation.trim()
+                    : buildTakeaway(
+                        concept,
+                        chunk
+                      ),
+
+                reason:
+                  buildReason(
+                    chunk
+                  ),
+
+                text:
+                  typeof chunk?.text ===
+                  "string"
+                    ? chunk.text.trim()
+                    : "",
+
+                ...(Number.isFinite(
+                  educationalScore
+                )
+                  ? {
+                      educationalScore,
+                    }
+                  : {}),
+
+                ...(Number.isFinite(
+                  similarity
+                )
+                  ? {
+                      similarity,
+                    }
+                  : {}),
+
+                ...(Number.isFinite(
+                  pathScore
+                )
+                  ? {
+                      pathScore,
+                    }
+                  : {}),
+
+                selectionEvidence: {
+                  eligibleCandidates:
+                    candidatePool.length,
+
+                  qualityThreshold:
+                    MIN_FINAL_EDUCATIONAL_SCORE,
+
+                  allocationStage:
+                    selectedIndex === 0
+                      ? "coverage-first matching"
+                      : "secondary resource pass",
+
+                  alternatives:
+                    alternativeCandidates,
+                },
+              };
+            }
+          );
+
+        return {
+          id:
+            concept.id,
+
+          title:
+            concept.title,
+
+          goal:
+            concept.goal,
+
+          explanation:
+            "",
+
+          resources,
+        };
+      }
+    ),
+};
 
     console.log(
       "Final learning path assembled from optimized finalists."
