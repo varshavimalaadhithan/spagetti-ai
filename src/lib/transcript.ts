@@ -15,62 +15,48 @@ export type VideoTranscript = {
 };
 
 function createTranscriptApi() {
-  return new YouTubeTranscriptApi({
-    /*
-     * Vercel's datacenter IP can be blocked by YouTube.
-     *
-     * The library first tries normally.
-     * If only the final transcript download is blocked,
-     * this fallback sends that signed transcript URL
-     * through a free public CORS relay.
-     */
-    transcriptFetchFallback:
-      async (
-        signedUrl,
-        videoId
+  /*
+   * Localhost:
+   * Use the normal internet connection.
+   *
+   * Vercel:
+   * YouTube often blocks datacenter IPs, so route
+   * transcript-related requests through a free relay.
+   *
+   * This is appropriate for a small portfolio/tester
+   * deployment, but it is not guaranteed production
+   * infrastructure.
+   */
+  if (process.env.VERCEL === "1") {
+    return new YouTubeTranscriptApi({
+      fetchFn: async (
+        url,
+        init
       ) => {
-        try {
-          console.log(
-            `Using transcript fallback for ${videoId}`
-          );
+        const targetUrl =
+          url.toString();
 
-          const proxyUrl =
-            `https://api.corsproxy.io/?url=${encodeURIComponent(
-              String(signedUrl)
-            )}`;
+        const proxyUrl =
+          `https://api.corsproxy.io/?url=${encodeURIComponent(
+            targetUrl
+          )}`;
 
-          const response =
-            await fetch(proxyUrl, {
-              method: "GET",
+        console.log(
+          "Routing YouTube transcript request through relay."
+        );
 
-              headers: {
-                Accept:
-                  "text/xml,text/plain,*/*",
-              },
-
-              cache:
-                "no-store",
-            });
-
-          if (!response.ok) {
-            console.warn(
-              `Transcript fallback failed for ${videoId}: ${response.status}`
-            );
-
-            return null;
+        return fetch(
+          proxyUrl,
+          {
+            ...init,
+            cache: "no-store",
           }
-
-          return response;
-        } catch (error) {
-          console.error(
-            `Transcript fallback error for ${videoId}:`,
-            error
-          );
-
-          return null;
-        }
+        );
       },
-  });
+    });
+  }
+
+  return new YouTubeTranscriptApi();
 }
 
 export async function getTranscript(
@@ -102,7 +88,7 @@ export async function getTranscript(
     );
   }
 
-  const segments =
+  const segments: TranscriptSegment[] =
     rawSegments
       .filter(
         (item) =>
@@ -117,12 +103,11 @@ export async function getTranscript(
       .map(
         (item) => ({
           text:
-            item.text
-              .trim(),
+            item.text.trim(),
 
           /*
-           * New library returns seconds.
-           * chunks.ts now also expects seconds.
+           * The new library returns seconds.
+           * chunks.ts also expects seconds.
            */
           offset:
             Number(

@@ -1,4 +1,3 @@
-cat > .vercelignore <<'EOF'
 .spaghetti-cache
 .spaghetti-cache/**
 .next
@@ -9,4 +8,3 @@ node_modules/**
 .env.*
 .git
 .git/**
-EOF
