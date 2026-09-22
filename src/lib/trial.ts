@@ -2,7 +2,7 @@ import "server-only";
 import { createHash } from "crypto";
 import { Redis } from "@upstash/redis";
 
-export const DAILY_TRIAL_LIMIT = 50;
+export const DAILY_TRIAL_LIMIT = 2;
 
 export type TrialStatus = {
   enabled: boolean;
