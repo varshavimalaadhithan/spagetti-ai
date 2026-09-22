@@ -45,6 +45,7 @@ function getLimiters(): Limiters | null {
       console.warn(
         "Public API rate limiting is unavailable because Redis credentials are missing."
       );
+
       missingRedisLogged = true;
     }
 
@@ -237,7 +238,9 @@ function jsonError(
 ) {
   const response =
     NextResponse.json(
-      { error: message },
+      {
+        error: message,
+      },
       {
         status,
         headers: {
@@ -253,6 +256,14 @@ function jsonError(
   );
 }
 
+/*
+ * Allows:
+ * - normal localhost same-origin requests
+ * - normal Vercel same-origin requests
+ * - Cloudflare Quick Tunnel requests
+ *
+ * Still rejects unrelated cross-site browser POSTs.
+ */
 function isSameOriginBrowserRequest(
   request: NextRequest
 ) {
@@ -263,10 +274,99 @@ function isSameOriginBrowserRequest(
     return true;
   }
 
-  return (
-    origin ===
+  let originUrl: URL;
+
+  try {
+    originUrl =
+      new URL(origin);
+  } catch {
+    return false;
+  }
+
+  /*
+   * Normal same-origin request.
+   */
+  if (
+    originUrl.origin ===
     request.nextUrl.origin
-  );
+  ) {
+    return true;
+  }
+
+  /*
+   * Reverse proxies can expose the public host
+   * through x-forwarded-host.
+   */
+  const forwardedHost =
+    request.headers
+      .get("x-forwarded-host")
+      ?.split(",")[0]
+      ?.trim();
+
+  const forwardedProto =
+    request.headers
+      .get("x-forwarded-proto")
+      ?.split(",")[0]
+      ?.trim();
+
+  if (forwardedHost) {
+    const protocol =
+      forwardedProto ||
+      originUrl.protocol.replace(
+        ":",
+        ""
+      ) ||
+      "https";
+
+    const forwardedOrigin =
+      `${protocol}://${forwardedHost}`;
+
+    if (
+      originUrl.origin ===
+      forwardedOrigin
+    ) {
+      return true;
+    }
+  }
+
+  /*
+   * Also compare against the Host header.
+   */
+  const host =
+    request.headers.get("host");
+
+  if (
+    host &&
+    originUrl.host === host
+  ) {
+    return true;
+  }
+
+  /*
+   * Cloudflare Quick Tunnel.
+   */
+  const isQuickTunnel =
+    originUrl.protocol === "https:" &&
+    originUrl.hostname.endsWith(
+      ".trycloudflare.com"
+    );
+
+  const cloudflareRequest =
+    Boolean(
+      request.headers.get("cf-ray") ||
+      request.headers.get(
+        "cf-connecting-ip"
+      )
+    );
+
+  if (
+    isQuickTunnel &&
+    cloudflareRequest
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 async function checkRateLimit(
@@ -276,13 +376,6 @@ async function checkRateLimit(
   const currentLimiters =
     getLimiters();
 
-  /*
-   * Local development remains usable if
-   * Redis is temporarily unavailable.
-   * Production fails closed so missing
-   * rate-limit protection cannot silently
-   * expose paid API endpoints.
-   */
   if (!currentLimiters) {
     if (
       process.env.NODE_ENV ===
@@ -379,8 +472,7 @@ export async function proxy(
     request.nextUrl.pathname;
 
   /*
-   * Security headers also apply to pages,
-   * not only API responses.
+   * Apply security headers to normal pages.
    */
   if (!pathname.startsWith("/api/")) {
     return applySecurityHeaders(
@@ -388,11 +480,6 @@ export async function proxy(
     );
   }
 
-  /*
-   * Public API allowlist.
-   * Old/internal AI routes are not exposed
-   * on the deployed demo.
-   */
   const allowedApiRoutes =
     new Set([
       "/api/search",
@@ -411,10 +498,12 @@ export async function proxy(
   }
 
   if (
-    (pathname ===
-      "/api/rank-videos" ||
+    (
       pathname ===
-        "/api/learning-path") &&
+        "/api/rank-videos" ||
+      pathname ===
+        "/api/learning-path"
+    ) &&
     !isSameOriginBrowserRequest(
       request
     )
@@ -432,7 +521,9 @@ export async function proxy(
       return jsonError(
         "Method not allowed.",
         405,
-        { Allow: "GET" }
+        {
+          Allow: "GET",
+        }
       );
     }
 
@@ -467,11 +558,15 @@ export async function proxy(
     pathname ===
     "/api/rank-videos"
   ) {
-    if (request.method !== "POST") {
+    if (
+      request.method !== "POST"
+    ) {
       return jsonError(
         "Method not allowed.",
         405,
-        { Allow: "POST" }
+        {
+          Allow: "POST",
+        }
       );
     }
 
@@ -490,11 +585,15 @@ export async function proxy(
     pathname ===
     "/api/learning-path"
   ) {
-    if (request.method !== "POST") {
+    if (
+      request.method !== "POST"
+    ) {
       return jsonError(
         "Method not allowed.",
         405,
-        { Allow: "POST" }
+        {
+          Allow: "POST",
+        }
       );
     }
 
@@ -513,11 +612,15 @@ export async function proxy(
     pathname ===
     "/api/trial-status"
   ) {
-    if (request.method !== "GET") {
+    if (
+      request.method !== "GET"
+    ) {
       return jsonError(
         "Method not allowed.",
         405,
-        { Allow: "GET" }
+        {
+          Allow: "GET",
+        }
       );
     }
 
