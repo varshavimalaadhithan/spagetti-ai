@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { YoutubeTranscript } from "youtube-transcript";
+import { getTranscript } from "@/lib/transcript";
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +14,14 @@ export async function GET(request: Request) {
       );
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptResult =
+  await getTranscript(
+    videoId,
+    videoId
+  );
+
+const transcript =
+  transcriptResult.segments;
 
     const timestamps = transcript
       .filter((_, index) => index % 10 === 0)

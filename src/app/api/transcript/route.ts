@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { YoutubeTranscript } from "youtube-transcript";
+import { getTranscript } from "@/lib/transcript";
 
 export async function POST(request: Request) {
   try {
@@ -12,8 +12,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const transcript =
-      await YoutubeTranscript.fetchTranscript(videoId);
+    const transcriptResult =
+  await getTranscript(
+    videoId,
+    videoId
+  );
+
+const transcript =
+  transcriptResult.segments;
 
     return NextResponse.json({
       videoId,

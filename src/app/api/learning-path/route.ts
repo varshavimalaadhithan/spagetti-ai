@@ -475,20 +475,32 @@ export async function POST(
       );
 
     if (
-      usableVideos.length ===
-      0
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "No usable transcripts found.",
-        },
-        {
-          status: 400,
-        }
+  usableVideos.length ===
+  0
+) {
+  if (trialReservationActive) {
+    const refundedTrial =
+      await refundTrialGeneration(
+        request
       );
-    }
 
+    trialReservationActive = false;
+
+    console.log(
+      `No usable transcripts. Trial refunded. ${refundedTrial.remaining}/${refundedTrial.limit} remaining.`
+    );
+  }
+
+  return NextResponse.json(
+    {
+      error:
+        "No usable transcripts found.",
+    },
+    {
+      status: 400,
+    }
+  );
+}
     /*
      * ============================================================
      * STEP 2

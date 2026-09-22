@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { YoutubeTranscript } from "youtube-transcript";
+import { getTranscript } from "@/lib/transcript";
 import { openai } from "@/lib/openai";
 
 export async function GET(request: Request) {
@@ -15,7 +15,14 @@ export async function GET(request: Request) {
       );
     }
 
-    const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+   const transcriptResult =
+  await getTranscript(
+    videoId,
+    videoId
+  );
+
+const transcript =
+  transcriptResult.segments;
 
     const text = transcript
       .map((item) => item.text)

@@ -16,6 +16,13 @@ export function createChunks(
 ): TranscriptChunk[] {
   const chunks: TranscriptChunk[] = [];
 
+  /*
+   * The transcript library now returns offset and
+   * duration directly in SECONDS.
+   *
+   * Keep enough caption segments together to give
+   * semantic retrieval meaningful educational context.
+   */
   const SEGMENTS_PER_CHUNK = 12;
 
   for (
@@ -28,33 +35,92 @@ export function createChunks(
       i + SEGMENTS_PER_CHUNK
     );
 
-    if (!group.length) continue;
+    if (!group.length) {
+      continue;
+    }
 
-    const start =
-      group[0].offset;
-
+    const first = group[0];
     const last =
       group[group.length - 1];
 
+    const start =
+      Number(first.offset);
+
+    const lastOffset =
+      Number(last.offset);
+
+    const lastDuration =
+      Number(last.duration);
+
+    if (
+      !Number.isFinite(start) ||
+      !Number.isFinite(lastOffset)
+    ) {
+      continue;
+    }
+
+    const safeDuration =
+      Number.isFinite(lastDuration) &&
+      lastDuration > 0
+        ? lastDuration
+        : 0;
+
     const end =
-      last.offset + last.duration;
+      lastOffset +
+      safeDuration;
+
+    const text = group
+      .map((segment) =>
+        typeof segment.text === "string"
+          ? segment.text.trim()
+          : ""
+      )
+      .filter(Boolean)
+      .join(" ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!text) {
+      continue;
+    }
+
+    /*
+     * IMPORTANT:
+     *
+     * start/end are already seconds.
+     * Do NOT divide by 1000 here.
+     */
+    const startTime =
+      Math.max(
+        0,
+        Math.floor(start)
+      );
+
+    let endTime =
+      Math.max(
+        startTime + 1,
+        Math.ceil(end)
+      );
+
+    /*
+     * Safety fallback for captions whose final
+     * duration is missing.
+     */
+    if (endTime <= startTime) {
+      endTime =
+        startTime + 1;
+    }
 
     chunks.push({
       id: `${videoId}-${i}`,
 
       videoId,
 
-      startTime: Math.floor(
-        start / 1000
-      ),
+      startTime,
 
-      endTime: Math.ceil(
-        end / 1000
-      ),
+      endTime,
 
-      text: group
-        .map((segment) => segment.text)
-        .join(" "),
+      text,
     });
   }
 
