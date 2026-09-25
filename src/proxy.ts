@@ -257,12 +257,11 @@ function jsonError(
 }
 
 /*
- * Allows:
- * - normal localhost same-origin requests
- * - normal Vercel same-origin requests
- * - Cloudflare Quick Tunnel requests
+ * Allow browser POST requests only when they
+ * originate from the same site.
  *
- * Still rejects unrelated cross-site browser POSTs.
+ * Requests without an Origin header are allowed
+ * because non-browser/server requests may omit it.
  */
 function isSameOriginBrowserRequest(
   request: NextRequest
@@ -274,99 +273,10 @@ function isSameOriginBrowserRequest(
     return true;
   }
 
-  let originUrl: URL;
-
-  try {
-    originUrl =
-      new URL(origin);
-  } catch {
-    return false;
-  }
-
-  /*
-   * Normal same-origin request.
-   */
-  if (
-    originUrl.origin ===
+  return (
+    origin ===
     request.nextUrl.origin
-  ) {
-    return true;
-  }
-
-  /*
-   * Reverse proxies can expose the public host
-   * through x-forwarded-host.
-   */
-  const forwardedHost =
-    request.headers
-      .get("x-forwarded-host")
-      ?.split(",")[0]
-      ?.trim();
-
-  const forwardedProto =
-    request.headers
-      .get("x-forwarded-proto")
-      ?.split(",")[0]
-      ?.trim();
-
-  if (forwardedHost) {
-    const protocol =
-      forwardedProto ||
-      originUrl.protocol.replace(
-        ":",
-        ""
-      ) ||
-      "https";
-
-    const forwardedOrigin =
-      `${protocol}://${forwardedHost}`;
-
-    if (
-      originUrl.origin ===
-      forwardedOrigin
-    ) {
-      return true;
-    }
-  }
-
-  /*
-   * Also compare against the Host header.
-   */
-  const host =
-    request.headers.get("host");
-
-  if (
-    host &&
-    originUrl.host === host
-  ) {
-    return true;
-  }
-
-  /*
-   * Cloudflare Quick Tunnel.
-   */
-  const isQuickTunnel =
-    originUrl.protocol === "https:" &&
-    originUrl.hostname.endsWith(
-      ".trycloudflare.com"
-    );
-
-  const cloudflareRequest =
-    Boolean(
-      request.headers.get("cf-ray") ||
-      request.headers.get(
-        "cf-connecting-ip"
-      )
-    );
-
-  if (
-    isQuickTunnel &&
-    cloudflareRequest
-  ) {
-    return true;
-  }
-
-  return false;
+  );
 }
 
 async function checkRateLimit(
@@ -497,6 +407,10 @@ export async function proxy(
     );
   }
 
+  /*
+   * Protect expensive POST routes from
+   * cross-site browser requests.
+   */
   if (
     (
       pathname ===

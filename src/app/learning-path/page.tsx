@@ -410,13 +410,29 @@ export default function LearningPath() {
                               const videoId =
                                 resource.videoId;
 
+                              const CONTEXT_BEFORE_SECONDS = 12;
+                              const CONTEXT_AFTER_SECONDS = 8;
+
+                              const playbackStartTime =
+                                Math.max(
+                                  0,
+                                  startTime -
+                                    CONTEXT_BEFORE_SECONDS
+                                );
+
+                              const playbackEndTime =
+                                Math.max(
+                                  playbackStartTime + 1,
+                                  endTime +
+                                    CONTEXT_AFTER_SECONDS
+                                );
+
                               const youtubeUrl =
-                                resource.url ||
-                                (videoId
+                                videoId
                                   ? `https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(
-                                      startTime
+                                      playbackStartTime
                                     )}s`
-                                  : "#");
+                                  : "#";
 
                               const educationalScore =
                                 getNumber(
@@ -440,41 +456,54 @@ export default function LearningPath() {
                                   : "";
                                   
                               const coverageSummary =
-  typeof resource.coverageSummary ===
-  "string"
-    ? resource.coverageSummary.trim()
-    : typeof resource.takeaway ===
-      "string"
-    ? resource.takeaway.trim()
-    : "";
-                                  const selectionEvidence =
-  resource?.selectionEvidence ?? null;
+                                typeof resource.coverageSummary ===
+                                "string"
+                                  ? resource.coverageSummary.trim()
+                                  : typeof resource.takeaway ===
+                                    "string"
+                                  ? resource.takeaway.trim()
+                                  : "";
 
-const eligibleCandidates =
-  getNumber(
-    selectionEvidence?.eligibleCandidates
-  );
+                              const takeaway =
+                                typeof resource.takeaway ===
+                                "string"
+                                  ? resource.takeaway.trim()
+                                  : "";
 
-const qualityThreshold =
-  getNumber(
-    selectionEvidence?.qualityThreshold
-  );
+                              const learningPoints =
+                                getLearningPoints(
+                                  coverageSummary,
+                                  takeaway
+                                );
 
-const allocationStage =
-  typeof selectionEvidence?.allocationStage ===
-  "string"
-    ? selectionEvidence.allocationStage
-    : "";
+                              const selectionEvidence =
+                                resource?.selectionEvidence ?? null;
 
-const alternatives =
-  Array.isArray(
-    selectionEvidence?.alternatives
-  )
-    ? selectionEvidence.alternatives.slice(
-        0,
-        3
-      )
-    : [];
+                              const eligibleCandidates =
+                                getNumber(
+                                  selectionEvidence?.eligibleCandidates
+                                );
+
+                              const qualityThreshold =
+                                getNumber(
+                                  selectionEvidence?.qualityThreshold
+                                );
+
+                              const allocationStage =
+                                typeof selectionEvidence?.allocationStage ===
+                                "string"
+                                  ? selectionEvidence.allocationStage
+                                  : "";
+
+                              const alternatives =
+                                Array.isArray(
+                                  selectionEvidence?.alternatives
+                                )
+                                  ? selectionEvidence.alternatives.slice(
+                                      0,
+                                      3
+                                    )
+                                  : [];
 
                               return (
                                 <div
@@ -494,7 +523,7 @@ const alternatives =
                                           <div className="font-mono text-sm rounded-lg border border-red-950 bg-red-950/30 px-3 py-1.5">
                                             <span className="text-red-400 font-semibold">
                                               {formatTime(
-                                                startTime
+                                                playbackStartTime
                                               )}
                                             </span>
 
@@ -504,57 +533,80 @@ const alternatives =
 
                                             <span className="text-zinc-300">
                                               {formatTime(
-                                                endTime
+                                                playbackEndTime
                                               )}
                                             </span>
                                           </div>
 
                                           <span className="text-xs text-zinc-600">
                                             {formatDuration(
-                                              endTime -
-                                                startTime
+                                              playbackEndTime -
+                                                playbackStartTime
                                             )}{" "}
-                                            watch
+                                            recommended watch
                                           </span>
                                         </div>
 
-                                        {/* SEGMENT COVERAGE PREVIEW */}
+                                        {/* WHAT YOU'LL LEARN */}
 
-{coverageSummary && (
-  <div className="mt-4 rounded-xl border border-zinc-800 bg-[#0c0c0c] p-4">
-    <div className="flex items-start gap-3">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-950 text-sm text-red-400">
-        ✦
-      </div>
+                                        {learningPoints.length > 0 && (
+                                          <div className="mt-4 rounded-xl border border-zinc-800 bg-[#0c0c0c] p-4">
+                                            <div className="flex items-start gap-3">
+                                              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-950 text-sm text-red-400">
+                                                ✦
+                                              </div>
 
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-red-400">
-          Covered in this exact segment
-        </p>
+                                              <div className="min-w-0">
+                                                <p className="text-xs font-semibold uppercase tracking-wider text-red-400">
+                                                  What you&apos;ll learn
+                                                </p>
 
-        <p className="mt-2 text-sm leading-6 text-zinc-300">
-          {shortenText(
-            coverageSummary,
-            420
-          )}
-        </p>
+                                                <ul className="mt-3 space-y-2">
+                                                  {learningPoints.map(
+                                                    (
+                                                      point,
+                                                      pointIndex
+                                                    ) => (
+                                                      <li
+                                                        key={
+                                                          pointIndex
+                                                        }
+                                                        className="flex gap-2 text-sm leading-6 text-zinc-300"
+                                                      >
+                                                        <span className="mt-0.5 text-red-500">
+                                                          •
+                                                        </span>
 
-        <p className="mt-3 text-xs text-zinc-600">
-          Preview for{" "}
-          <span className="font-mono text-zinc-500">
-            {formatTime(
-              startTime
-            )}
-            {" → "}
-            {formatTime(
-              endTime
-            )}
-          </span>
-        </p>
-      </div>
-    </div>
-  </div>
-)}
+                                                        <span>
+                                                          {point}
+                                                        </span>
+                                                      </li>
+                                                    )
+                                                  )}
+                                                </ul>
+
+                                                <div className="mt-4 border-t border-zinc-800 pt-3">
+                                                  <p className="text-xs text-zinc-600">
+                                                    Recommended watch{" "}
+                                                    <span className="font-mono text-zinc-500">
+                                                      {formatTime(
+                                                        playbackStartTime
+                                                      )}
+                                                      {" → "}
+                                                      {formatTime(
+                                                        playbackEndTime
+                                                      )}
+                                                    </span>
+                                                  </p>
+
+                                                  <p className="mt-1 text-xs text-zinc-700">
+                                                    Includes a little context around Spaghetti&apos;s selected transcript segment.
+                                                  </p>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
 
                                         {/* WHY THIS CLIP WON - COLLAPSIBLE */}
 
@@ -824,7 +876,7 @@ const alternatives =
       <div className="mt-6 border-t border-zinc-800 pt-5">
         <div className="mb-2">
   <p className="text-xs uppercase tracking-wider text-zinc-600">
-    Optional technical verification
+    Optional verification
   </p>
 
   <p className="mt-1 text-xs text-zinc-700">
@@ -859,8 +911,8 @@ const alternatives =
                                           rel="noopener noreferrer"
                                           className="shrink-0 inline-flex items-center justify-center rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition"
                                         >
-                                          Watch exact
-                                          segment →
+                                          Watch with
+                                          context →
                                         </a>
                                       )}
                                     </div>
@@ -994,6 +1046,86 @@ function shortenText(
   return `${text
     .slice(0, maxLength)
     .trim()}…`;
+}
+
+function getLearningPoints(
+  ...values: unknown[]
+): string[] {
+  const sources =
+    values
+      .filter(
+        (
+          value
+        ): value is string =>
+          typeof value === "string"
+      )
+      .map((value) =>
+        value
+          .replace(/\s+/g, " ")
+          .trim()
+      )
+      .filter(Boolean);
+
+  if (sources.length === 0) {
+    return [];
+  }
+
+  const candidates =
+    sources.flatMap((source) =>
+      source
+        .split(
+          /(?<=[.!?])\s+|;\s+|\n+/
+        )
+        .map((item) =>
+          item
+            .replace(
+              /^[-•]\s*/,
+              ""
+            )
+            .trim()
+        )
+        .filter(
+          (item) =>
+            item.length >= 15
+        )
+    );
+
+  const unique: string[] = [];
+  const seen =
+    new Set<string>();
+
+  for (const candidate of candidates) {
+    const normalized =
+      candidate.toLowerCase();
+
+    if (seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+
+    unique.push(
+      shortenText(
+        candidate,
+        180
+      )
+    );
+
+    if (unique.length === 3) {
+      break;
+    }
+  }
+
+  if (unique.length === 0) {
+    return [
+      shortenText(
+        sources[0],
+        180
+      ),
+    ];
+  }
+
+  return unique;
 }
 
 function formatDuration(
