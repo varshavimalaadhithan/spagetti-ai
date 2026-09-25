@@ -1,4 +1,5 @@
 import {
+  WebshareProxyConfig,
   YouTubeTranscriptApi,
 } from "@hallelx/youtube-transcript";
 
@@ -14,21 +15,67 @@ export type VideoTranscript = {
   segments: TranscriptSegment[];
 };
 
-type SupadataSegment = {
-  text?: unknown;
-  offset?: unknown;
-  duration?: unknown;
-};
+function createTranscriptApi() {
+  const proxyUsername =
+    process.env.WEBSHARE_PROXY_USERNAME?.trim();
 
-type SupadataResponse = {
-  content?: SupadataSegment[];
-};
+  const proxyPassword =
+    process.env.WEBSHARE_PROXY_PASSWORD?.trim();
 
-async function fetchDirectTranscript(
-  videoId: string
-): Promise<TranscriptSegment[]> {
+  /*
+   * Catch an incomplete configuration instead
+   * of silently making direct YouTube requests.
+   */
+  if (
+    (proxyUsername && !proxyPassword) ||
+    (!proxyUsername && proxyPassword)
+  ) {
+    throw new Error(
+      "Webshare proxy configuration is incomplete. " +
+        "Both WEBSHARE_PROXY_USERNAME and " +
+        "WEBSHARE_PROXY_PASSWORD are required."
+    );
+  }
+
+  /*
+   * When Webshare credentials exist, route
+   * YouTube transcript traffic through the
+   * rotating residential proxy network.
+   *
+   * Without credentials, local development
+   * can still use the normal residential
+   * internet connection directly.
+   */
+  if (
+    proxyUsername &&
+    proxyPassword
+  ) {
+    console.log(
+      "Transcript transport: Webshare residential proxy"
+    );
+
+    return new YouTubeTranscriptApi({
+      proxyConfig:
+        new WebshareProxyConfig({
+          proxyUsername,
+          proxyPassword,
+        }),
+    });
+  }
+
+  console.log(
+    "Transcript transport: direct connection"
+  );
+
+  return new YouTubeTranscriptApi();
+}
+
+export async function getTranscript(
+  videoId: string,
+  title: string
+): Promise<VideoTranscript> {
   const api =
-    new YouTubeTranscriptApi();
+    createTranscriptApi();
 
   const transcript =
     await api.fetch(videoId, {
@@ -38,117 +85,37 @@ async function fetchDirectTranscript(
   const rawSegments =
     transcript.toRawData();
 
-  const segments = rawSegments
-    .filter(
-      (item) =>
-        typeof item.text === "string" &&
-        item.text.trim().length > 0 &&
-        Number.isFinite(
-          Number(item.start)
-        )
-    )
-    .map((item) => ({
-      text: item.text.trim(),
-      offset: Number(item.start),
-      duration:
-        Number.isFinite(
-          Number(item.duration)
-        )
-          ? Math.max(
-              0,
-              Number(item.duration)
-            )
-          : 0,
-    }));
-
-  if (!segments.length) {
+  if (
+    !Array.isArray(rawSegments) ||
+    rawSegments.length === 0
+  ) {
     throw new Error(
-      "Direct transcript returned no usable segments."
-    );
-  }
-
-  return segments;
-}
-
-async function fetchSupadataTranscript(
-  videoId: string
-): Promise<TranscriptSegment[]> {
-  const apiKey =
-    process.env.SUPADATA_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      "SUPADATA_API_KEY is missing."
-    );
-  }
-
-  const videoUrl =
-    `https://www.youtube.com/watch?v=${videoId}`;
-
-  const url =
-    new URL(
-      "https://api.supadata.ai/v1/transcript"
-    );
-
-  url.searchParams.set(
-    "url",
-    videoUrl
-  );
-
-  url.searchParams.set(
-    "lang",
-    "en"
-  );
-
-  const response =
-    await fetch(url.toString(), {
-      headers: {
-        "x-api-key": apiKey,
-      },
-      cache: "no-store",
-    });
-
-  if (!response.ok) {
-    const message =
-      await response.text();
-
-    throw new Error(
-      `Supadata transcript failed (${response.status}): ${message}`
-    );
-  }
-
-  const data =
-    (await response.json()) as
-      SupadataResponse;
-
-  if (!Array.isArray(data.content)) {
-    throw new Error(
-      "Supadata returned no transcript segments."
+      `No transcript segments found for video ${videoId}`
     );
   }
 
   /*
-   * Supadata timestamps are milliseconds.
-   * Spaghetti's chunking code expects seconds.
+   * @hallelx/youtube-transcript returns
+   * start and duration in SECONDS.
    */
   const segments =
-    data.content
+    rawSegments
       .filter(
         (item) =>
           typeof item.text ===
             "string" &&
-          item.text.trim().length > 0 &&
+          item.text.trim().length >
+            0 &&
           Number.isFinite(
-            Number(item.offset)
+            Number(item.start)
           )
       )
       .map((item) => ({
         text:
-          String(item.text).trim(),
+          item.text.trim(),
 
         offset:
-          Number(item.offset) /
-          1000,
+          Number(item.start),
 
         duration:
           Number.isFinite(
@@ -158,46 +125,18 @@ async function fetchSupadataTranscript(
                 0,
                 Number(
                   item.duration
-                ) / 1000
+                )
               )
             : 0,
       }));
 
-  if (!segments.length) {
+  if (
+    segments.length === 0
+  ) {
     throw new Error(
-      "Supadata transcript contained no usable text."
+      `Transcript contained no usable text for video ${videoId}`
     );
   }
-
-  return segments;
-}
-
-export async function getTranscript(
-  videoId: string,
-  title: string
-): Promise<VideoTranscript> {
-  try {
-    const segments =
-      await fetchDirectTranscript(
-        videoId
-      );
-
-    return {
-      videoId,
-      title,
-      segments,
-    };
-  } catch (directError) {
-    console.warn(
-      `Direct YouTube transcript failed for ${videoId}. Trying hosted fallback.`,
-      directError
-    );
-  }
-
-  const segments =
-    await fetchSupadataTranscript(
-      videoId
-    );
 
   return {
     videoId,
