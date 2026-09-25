@@ -1976,6 +1976,7 @@ Return ONLY valid JSON:
         concept.id,
         mergedCandidates
       );
+
     }
 
     const selectedChunksByConcept =
@@ -2010,7 +2011,35 @@ Return ONLY valid JSON:
      * This maximizes first-resource concept coverage while still
      * preserving global timestamp uniqueness.
      */
+    console.log("=== CONCEPT CANDIDATE DEBUG ===");
 
+for (const concept of orderedConcepts) {
+  const candidates =
+    candidatePoolsByConcept.get(
+      concept.id
+    ) || [];
+
+  console.log({
+    conceptId: concept.id,
+    conceptTitle: concept.title,
+    eligibleCandidates:
+      candidates.length,
+    scores: candidates.map(
+      (candidate: any) => ({
+        educationalScore:
+          candidate.educationalScore,
+        similarity:
+          candidate.similarity,
+        videoId:
+          candidate.videoId,
+        startTime:
+          candidate.startTime,
+        endTime:
+          candidate.endTime,
+      })
+    ),
+  });
+}
     const firstResourceByConcept =
       new Map<string, any>();
 
