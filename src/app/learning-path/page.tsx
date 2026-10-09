@@ -407,30 +407,42 @@ export default function LearningPath() {
                                   resource.endTime
                                 ) || 0;
 
+                              const rawWatchStartTime =
+                                Number(
+                                  resource.watchStartTime
+                                );
+
+                              const rawWatchEndTime =
+                                Number(
+                                  resource.watchEndTime
+                                );
+
+                              const watchStartTime =
+                                Number.isFinite(
+                                  rawWatchStartTime
+                                )
+                                  ? Math.max(
+                                      0,
+                                      rawWatchStartTime
+                                    )
+                                  : startTime;
+
+                              const watchEndTime =
+                                Number.isFinite(
+                                  rawWatchEndTime
+                                ) &&
+                                rawWatchEndTime >
+                                  watchStartTime
+                                  ? rawWatchEndTime
+                                  : endTime;
+
                               const videoId =
                                 resource.videoId;
-
-                              const CONTEXT_BEFORE_SECONDS = 12;
-                              const CONTEXT_AFTER_SECONDS = 8;
-
-                              const playbackStartTime =
-                                Math.max(
-                                  0,
-                                  startTime -
-                                    CONTEXT_BEFORE_SECONDS
-                                );
-
-                              const playbackEndTime =
-                                Math.max(
-                                  playbackStartTime + 1,
-                                  endTime +
-                                    CONTEXT_AFTER_SECONDS
-                                );
 
                               const youtubeUrl =
                                 videoId
                                   ? `https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(
-                                      playbackStartTime
+                                      watchStartTime
                                     )}s`
                                   : "#";
 
@@ -523,7 +535,7 @@ export default function LearningPath() {
                                           <div className="font-mono text-sm rounded-lg border border-red-950 bg-red-950/30 px-3 py-1.5">
                                             <span className="text-red-400 font-semibold">
                                               {formatTime(
-                                                playbackStartTime
+                                                watchStartTime
                                               )}
                                             </span>
 
@@ -533,15 +545,15 @@ export default function LearningPath() {
 
                                             <span className="text-zinc-300">
                                               {formatTime(
-                                                playbackEndTime
+                                                watchEndTime
                                               )}
                                             </span>
                                           </div>
 
                                           <span className="text-xs text-zinc-600">
                                             {formatDuration(
-                                              playbackEndTime -
-                                                playbackStartTime
+                                              watchEndTime -
+                                                watchStartTime
                                             )}{" "}
                                             recommended watch
                                           </span>
@@ -590,17 +602,17 @@ export default function LearningPath() {
                                                     Recommended watch{" "}
                                                     <span className="font-mono text-zinc-500">
                                                       {formatTime(
-                                                        playbackStartTime
+                                                        watchStartTime
                                                       )}
                                                       {" → "}
                                                       {formatTime(
-                                                        playbackEndTime
+                                                        watchEndTime
                                                       )}
                                                     </span>
                                                   </p>
 
                                                   <p className="mt-1 text-xs text-zinc-700">
-                                                    Includes a little context around Spaghetti&apos;s selected transcript segment.
+                                                    Includes the surrounding explanation needed to learn the concept, while keeping Spaghetti&apos;s exact evidence segment for verification.
                                                   </p>
                                                 </div>
                                               </div>
@@ -764,6 +776,28 @@ export default function LearningPath() {
       </p>
     </div>
 
+    {/* EXACT AI EVIDENCE */}
+
+    <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
+      <p className="text-xs text-zinc-500">
+        AI-selected evidence
+      </p>
+
+      <p className="mt-1 font-mono text-sm text-zinc-300">
+        {formatTime(
+          startTime
+        )}
+        {" → "}
+        {formatTime(
+          endTime
+        )}
+      </p>
+
+      <p className="mt-2 text-xs leading-5 text-zinc-600">
+        This exact transcript segment was used for relevance, scoring and grounding. The larger recommended watch window includes the surrounding teaching context.
+      </p>
+    </div>
+
     {/* BADGES */}
 
     <div className="mt-4 flex flex-wrap gap-2">
@@ -911,8 +945,8 @@ export default function LearningPath() {
                                           rel="noopener noreferrer"
                                           className="shrink-0 inline-flex items-center justify-center rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition"
                                         >
-                                          Watch with
-                                          context →
+                                          Watch recommended
+                                          section →
                                         </a>
                                       )}
                                     </div>
