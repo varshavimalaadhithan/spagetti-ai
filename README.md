@@ -55,6 +55,7 @@ The user gets a structured path through free content — not a playlist, but a c
 
 - **Why batching and caching?** The initial pipeline hit API rate limits when processing hundreds of transcript segments. Batched processing and Redis caching reduced redundant API calls and made the system viable under real-world compute constraints.
 
+### TRY IT LIVE NOW: spagetti-jom2os78r-varshavimalaadhithan.vercel.app
 
 ### Environment Variables
 
