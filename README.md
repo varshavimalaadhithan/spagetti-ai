@@ -55,25 +55,6 @@ The user gets a structured path through free content — not a playlist, but a c
 
 - **Why batching and caching?** The initial pipeline hit API rate limits when processing hundreds of transcript segments. Batched processing and Redis caching reduced redundant API calls and made the system viable under real-world compute constraints.
 
-## Running Locally
-
-```bash
-# Clone the repository
-git clone https://github.com/[YOUR-USERNAME]/spaghetti-ai.git
-cd spaghetti-ai
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env.local
-# Add your API keys to .env.local
-
-# Run the development server
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Environment Variables
 
