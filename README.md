@@ -1,191 +1,133 @@
-Spaghetti AI
+# Spaghetti AI
 
-Spaghetti AI is an learning-path system that turns a broad learning topic into a prerequisite-aware sequence of timestamped educational video segments.
+A smart-learning platform that transforms any topic into a structured, concept-by-concept learning path across YouTube videos — selecting specific timestamped segments rather than listing full videos.
 
-Instead of recommending entire videos, the system identifies strong transcript-grounded sections for each concept, removes redundant material, and organizes the selected segments into a structured learning path.
+<img width="1710" height="1107" alt="image" src="https://github.com/user-attachments/assets/37c1177a-6459-49c2-8328-28c9f5af3ad1" />
+<img width="1710" height="1107" alt="Screenshot 2026-11-06 at 10 45 40 AM" src="https://github.com/user-attachments/assets/8cd205ec-aa09-45da-84dc-7dc1ee5078b2" />
 
-Why I built it
+## The Problem
 
-Educational content on YouTube is abundant, but learners often spend more time searching, scrubbing, and deciding what to watch than actually learning.
+YouTube has thousands of hours of excellent educational content. But searching a topic returns hundreds of unordered videos with no indication of where to start, what to watch next, or which 4-minute segment inside a 45-minute lecture actually explains the concept you need. The content is free. The learning path is missing.
 
-Spaghetti AI is designed to answer three questions:
+## What Spaghetti AI Does
 
-What concepts should I learn?
+1. **Enter a topic** — e.g., "circuit analysis" or "neural networks"
+2. **The system breaks it into subtopics** — modelling the topic as a prerequisite graph of concepts that build on each other
+3. **It searches YouTube** — finding educational videos relevant to each subtopic
+4. **It retrieves and processes transcripts** — extracting the specific segments where each concept is explained
+5. **It generates an ordered learning path** — sequenced so each concept builds on the previous one, with timestamped links to the exact moments in each video
 
-In what order should I learn them?
+The user gets a structured path through free content — not a playlist, but a curriculum.
 
-Which exact video segments teach each concept well?
+## Tech Stack
 
-System pipeline
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js (App Router) |
+| Language | TypeScript |
+| Frontend | React, Tailwind CSS |
+| API | YouTube Data API v3 |
+| AI/Embeddings | AI/API integration for learning-path generation |
+| Caching | Redis |
+| Transcript Processing | Custom retrieval and segmentation pipeline |
 
-flowchart TD
-    A[User topic] --> B[Concept decomposition]
-    B --> C[Prerequisite graph]
-    C --> D[YouTube resource search]
-    D --> E[Transcript extraction]
-    E --> F[Timestamped transcript chunks]
-    F --> G[Embeddings]
-    G --> H[Semantic retrieval]
-    H --> I[Segment analysis]
-    I --> J[Educational scoring]
-    J --> K[Redundancy removal]
-    K --> L[Path optimization]
-    L --> M[Validation]
-    M --> N[Final learning timeline]
-    N --> O[YouTube playback with context]
+## How It Works
 
-What the system does
+**Topic → Prerequisite Graph → Transcript Retrieval → Segment Scoring → Learning Path**
 
-Searches YouTube for educational resources
+1. **Prerequisite Graph Modelling** — The system decomposes a topic into ordered subtopics, determining which concepts must be understood before others.
 
-Ranks candidate videos
+2. **Transcript Retrieval** — For each subtopic, the system retrieves YouTube video transcripts and identifies segments where the concept is discussed using vector embeddings.
 
-Extracts and caches transcripts
+3. **Batched Embedding Generation** — To operate within API rate limits and compute constraints, transcript segments are processed in batches rather than individually.
 
-Splits transcripts into timestamped chunks
+4. **Redis Caching** — Previously computed embeddings and segment scores are cached to eliminate redundant computation on repeated or similar queries.
 
-Creates and caches semantic embeddings
+5. **Scoring and Redundancy Removal** — Segments are scored for relevance and quality. Redundant segments covering the same concept are filtered out, keeping only the strongest explanation for each subtopic.
 
-Decomposes the user topic into learning concepts
+6. **Staged Processing** — The pipeline processes data in stages to manage memory and API usage efficiently — the same resource-constraint thinking that applies to embedded system design.
 
-Builds prerequisite relationships between concepts
+## Key Technical Decisions
 
-Retrieves transcript segments relevant to each concept
+- **Why prerequisite graphs?** Learning is sequential. Understanding Kirchhoff's laws requires understanding voltage and current first. The graph ensures concepts are presented in a buildable order.
 
-Evaluates segment educational quality
+- **Why timestamped segments instead of full videos?** A student looking for a 4-minute explanation of node voltage analysis shouldn't have to watch a 50-minute lecture. Segment-level retrieval respects the learner's time.
 
-Removes redundant explanations
+- **Why batching and caching?** The initial pipeline hit API rate limits when processing hundreds of transcript segments. Batched processing and Redis caching reduced redundant API calls and made the system viable under real-world compute constraints.
 
-Optimizes the final learning sequence
+## Running Locally
 
-Validates concept coverage, transcript grounding, and duplicate resources
+```bash
+# Clone the repository
+git clone https://github.com/[YOUR-USERNAME]/spaghetti-ai.git
+cd spaghetti-ai
 
-Opens YouTube near the selected segment with additional playback context
+# Install dependencies
+npm install
 
-Shows what the learner should understand from each selected clip
+# Set up environment variables
+cp .env.example .env.local
+# Add your API keys to .env.local
 
-Tech stack
+# Run the development server
+npm run dev
+```
 
-Next.js
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-React
+### Environment Variables
 
-TypeScript
+```
+YOUTUBE_API_KEY=your_youtube_data_api_key
+# Add any additional API keys required for AI/embedding generation
+REDIS_URL=your_redis_connection_string (optional for local dev)
+```
 
-Tailwind CSS
+## Project Structure
 
-OpenAI API
+```
+spaghetti-ai/
+├── app/                  # Next.js App Router pages
+├── components/           # React UI components
+├── lib/
+│   ├── graph/            # Prerequisite graph modelling
+│   ├── retrieval/        # Transcript retrieval and segmentation
+│   ├── embeddings/       # Embedding generation and caching
+│   ├── scoring/          # Segment scoring and redundancy removal
+│   └── youtube/          # YouTube Data API integration
+├── api/                  # Backend API routes
+├── styles/               # Tailwind CSS configuration
+├── public/               # Static assets
+└── README.md
+```
 
-YouTube Data API
+*Adjust this structure to match your actual file organisation.*
 
-Transcript extraction
+## Limitations
 
-Semantic embeddings
+- Learning path quality depends on the availability and quality of YouTube transcripts for a given topic. Topics with few educational videos produce weaker paths.
+- Transcript segmentation relies on textual content — videos that teach primarily through visuals with minimal narration are harder to segment meaningfully.
+- The system currently generates paths in English. Multi-language support is not yet implemented.
+- Rate limits on external APIs constrain the number of segments that can be processed per query.
 
-Upstash Redis
+## Future Development
 
-Vercel
+- Improved segment scoring using user feedback signals
+- User accounts with saved learning paths
+- Learning progress tracking
+- Quality benchmarking against manually curated curricula
+- Multi-language transcript support
 
-Webshare residential proxy transport
+## Why I Built This
 
-Engineering decisions
+I noticed that the best educational content in the world is technically free — it's sitting on YouTube. But without structure, sequence, and context, free resources are inaccessible to the people who need them most. A student in any country with an internet connection can access the same lectures as a student at a top university. What they can't access is the curriculum that tells them what order to learn things in and which specific explanation to watch for each concept.
 
-Prerequisite-aware learning order
+Spaghetti AI is my attempt to build that missing structure.
 
-The system does not treat concepts as an unordered list. It creates prerequisite relationships and uses them to construct a learning sequence.
+## Built By
 
-Segment-level retrieval
+**Varsha Vimalaadhithan** — independently designed, developed, and deployed.
 
-Videos are split into timestamped transcript chunks. Embeddings are generated for these chunks so retrieval happens at the explanation level rather than the whole-video level.
+---
 
-Quality threshold
-
-A segment must meet a minimum educational-quality threshold before it is eligible for final selection. The system is allowed to leave a concept without a resource instead of forcing a weak explanation into the path.
-
-Coverage-first resource allocation
-
-When multiple concepts compete for similar resources, the system prioritizes giving concepts distinct strong segments before assigning optional second resources.
-
-Validation
-
-Generated paths are checked for concept coverage, transcript grounding, duplicate resources, and path validity. Only sufficiently validated paths are saved to the final-path cache.
-
-Caching
-
-Spaghetti AI uses local and persistent caching for expensive operations such as transcripts, embeddings, concept generation, and validated final paths. Cached final paths do not consume a new daily generation.
-
-Production engineering challenge
-
-One of the most important engineering problems appeared only after deployment.
-
-Transcript extraction worked from a residential development machine but failed from cloud infrastructure because YouTube treated datacenter traffic differently. I investigated the failure across multiple deployment approaches, tested alternate transcript transports, and integrated a rotating residential proxy into the production transcript layer.
-
-A later production failure returned HTTP 402 from the proxy provider. Logs showed that the learning-path system itself was still functioning and that the failure occurred before transcript retrieval. The application also correctly refunded the user's trial generation when no usable transcripts could be retrieved.
-
-During this work I also diagnosed a compatibility issue between the transcript library's proxy dispatcher and a newer undici version. Pinning undici to a compatible release restored successful proxied transcript requests.
-
-This debugging process changed the project from a local prototype into a more reliable deployed system.
-
-Reliability and cost controls
-
-Per-IP public API rate limiting
-
-Two fresh learning-path generations per visitor per day
-
-Cached paths remain available without consuming a fresh generation
-
-Failed fresh generations are refunded
-
-Persistent Redis caching reduces repeated API work
-
-API credentials are stored in environment variables
-
-Cross-site browser POST requests to expensive routes are rejected
-
-Production security headers are applied at the proxy layer
-
-Benchmarking
-
-The final production benchmark is intentionally run on fresh, uncached topics.
-
-Metrics recorded for each topic:
-
-generation success/failure
-
-validation pass/fail
-
-concept coverage
-
-resource grounding
-
-duplicate resources
-
-videos processed
-
-transcript chunks processed
-
-candidate segments analyzed
-
-end-to-end processing time
-
-manual timestamp usability rating
-
-Benchmark results will be added here after the final production run.
-
-User testing
-
-The deployed product is tested across different technical subjects. Feedback focuses on timestamp usefulness, clarity of learning order, usefulness of the “What you'll learn” preview, confusion or friction, and preference versus manually searching YouTube.
-
-What I learned
-
-This project strengthened my experience with graph-based modeling, semantic retrieval, ranking and optimization, API constraints and batching, caching and distributed state, validation, production debugging, network/proxy behavior, rate limiting, reliability engineering, and designing an AI system whose output must remain grounded in external evidence.
-
-Project status
-
-Core backend: feature frozen
-
-Current focus: final production benchmarking, documentation, demo recording, and project packaging.
-
-Disclaimer
-
-Spaghetti AI is an independent engineering project. It is designed to help learners navigate educational video content and does not guarantee the correctness of third-party educational material.
+*This project was built entirely from scratch as an independent learning exercise. No course, bootcamp, or tutorial produced this — every technical decision was made by solving problems as they appeared.*
