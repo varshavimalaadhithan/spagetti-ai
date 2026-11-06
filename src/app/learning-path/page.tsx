@@ -70,10 +70,51 @@ export default function LearningPath() {
     );
   }
 
-  const sections =
-    Array.isArray(path.learningPath)
-      ? path.learningPath
+  const rawSections =
+  Array.isArray(path.learningPath)
+    ? path.learningPath
+    : [];
+
+const sections = rawSections
+  .map((section: any) => {
+    const resources = Array.isArray(section.resources)
+      ? section.resources
       : [];
+
+    const seen = new Set<string>();
+
+    const dedupedResources = resources.filter(
+      (resource: any) => {
+        const videoId =
+          resource?.videoId || "unknown";
+
+        const start =
+          Number(resource?.startTime) || 0;
+
+        const end =
+          Number(resource?.endTime) || 0;
+
+        const key = `${videoId}-${start}-${end}`;
+
+        if (seen.has(key)) {
+          return false;
+        }
+
+        seen.add(key);
+        return true;
+      }
+    );
+
+    return {
+      ...section,
+      resources: dedupedResources,
+    };
+  })
+  .filter(
+    (section: any) =>
+      Array.isArray(section.resources) &&
+      section.resources.length > 0
+  );
 
   const validation =
     path.validation || null;
@@ -146,7 +187,7 @@ export default function LearningPath() {
 
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <MetricCard
-              label="Concepts"
+              label="Verified concepts"
               value={sections.length}
             />
 
@@ -159,17 +200,17 @@ export default function LearningPath() {
             />
 
             <MetricCard
-              label="Coverage"
-              value={
-                isNumber(
-                  validation?.conceptCoverage
-                )
-                  ? `${Math.round(
-                      validation.conceptCoverage
-                    )}%`
-                  : "—"
-              }
-            />
+  label="Coverage"
+  value={
+    isNumber(
+      validation?.conceptCoverage
+    )
+      ? `${Math.round(
+          validation.conceptCoverage
+        )}%`
+      : "—"
+  }
+/>
 
             <MetricCard
               label="Grounding"

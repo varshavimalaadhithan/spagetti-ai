@@ -96,7 +96,7 @@ type ProcessedVideo = {
 
 
 
-const FINAL_PATH_CACHE_VERSION = "v9";
+const FINAL_PATH_CACHE_VERSION = "v10";
 
 const CONCEPT_EMBEDDING_CACHE_VERSION = "v2";
 
@@ -5075,9 +5075,14 @@ Return ONLY valid JSON:
 
 
   learningPath:
+  orderedConcepts
+    .filter((concept) => {
+      const selectedChunks =
+        selectedChunksByConcept.get(concept.id) || [];
 
-    orderedConcepts.map(
-
+      return selectedChunks.length > 0;
+    })
+    .map(
       (concept) => {
 
         const selectedChunks =
